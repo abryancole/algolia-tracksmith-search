@@ -35,8 +35,7 @@ At a high level:
 When it comes to **Custom Ranking**, the goal is to influence the order of results *after* Algolia has determined textual relevance. A good starting point is to think about what makes one result more valuable than another from a business or user perspective. Common attributes teams use include popularity, sales volume, freshness, or inventory status. There’s no single “right” setup, it’s typically something you iterate on as you learn how users interact with search.
 
 We have more detailed documentation on these topics here:  
-- https://tinyurl.com/4kmk5xtx  
-- https://tinyurl.com/nhaverc4  
+- https://www.algolia.com/doc/glossary  
 
 You can also explore and test directly in the dashboard, and the in-product AI assistant can be helpful as questions come up.
 
