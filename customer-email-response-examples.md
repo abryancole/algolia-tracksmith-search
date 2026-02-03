@@ -28,7 +28,7 @@ Thanks for reaching out, and no worries at all. These are very common questions 
 
 At a high level:
 
-- **Records** are the individual objects you send to Algolia to be searched. You can think of a record as one searchable item — for example, a product, article, or location, made up of attributes like title, description, price, category, or popularity.
+- **Records** are the individual objects you send to Algolia to be searched. You can think of a record as one searchable item. For example, a product, article, or location, made up of attributes like title, description, price, category, or popularity.
 
 - **Indexing** is the process of sending those records to Algolia and organizing them so they can be retrieved in an optimized order in milliseconds. Once your data is indexed, Algolia can apply relevance rules and return results in real time as users type.
 
