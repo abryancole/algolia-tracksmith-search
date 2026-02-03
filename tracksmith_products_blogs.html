@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tracksmith</title>
+
+  <!-- Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Algolia InstantSearch v4 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.5.1/themes/satellite-min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+
+  <style>
+    :root{
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --surface-2: #fbfcff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+      --radius: 16px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 50% -100px, #eef2ff 0%, var(--bg) 55%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    /* Header */
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(246, 247, 251, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px 12px;
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand{
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      gap: 10px;
+    }
+    .brand img{
+      height: 48px;
+      width: auto;
+      display:block;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    /* Search row */
+    .search-row{
+      width: 100%;
+      max-width: 900px;
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      justify-content:center;
+    }
+    .search-box{
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 10px 8px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    /* InstantSearch SearchBox */
+    .ais-SearchBox{ position: relative; }
+    .ais-SearchBox form{ display:flex; align-items:center; gap: 10px; }
+    .ais-SearchBox-input{
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none !important;
+      outline: none !important;
+      font-size: 16px !important;
+      background: transparent !important;
+      color: var(--text) !important;
+      padding: 10px 8px 10px 44px !important; /* room for icon */
+    }
+    .ais-SearchBox-submit{
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none !important;
+      background: transparent !important;
+      cursor: pointer;
+      padding: 8px !important;
+      border-radius: 999px !important;
+    }
+    .ais-SearchBox-reset{
+      border: none !important;
+      background: transparent !important;
+      cursor: pointer;
+      padding: 8px !important;
+      border-radius: 999px;
+    }
+    .ais-SearchBox-submit:hover, .ais-SearchBox-reset:hover{
+      background: #f3f4f6 !important;
+    }
+
+    /* Layout */
+    .wrap{
+      max-width: 1200px;
+      margin: 18px auto 60px;
+      padding: 0 16px;
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel .panel-header{
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(to bottom, var(--surface), var(--surface-2));
+    }
+    .panel .panel-header h3{
+      margin:0;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .panel .panel-body{ padding: 14px 16px; }
+
+    /* Accordion facets */
+    .facet-accordion{
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow:hidden;
+      background: var(--surface);
+      margin-bottom: 12px;
+    }
+    .facet-accordion summary{
+      list-style: none;
+      cursor: pointer;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      user-select:none;
+      font-weight: 600;
+      color: var(--text);
+      background: linear-gradient(to bottom, var(--surface), var(--surface-2));
+      border-bottom: 1px solid var(--border);
+    }
+    .facet-accordion summary::-webkit-details-marker{ display:none; }
+    .facet-accordion .chev{
+      transition: transform 180ms ease;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    details[open] .chev{ transform: rotate(90deg); }
+    .facet-content{ padding: 10px 12px 12px; }
+
+    /* Collapsible "top 3" within facet */
+    .facet-top3 .ais-RefinementList-item:nth-child(n+4){ display:none; }
+    .facet-top3.show-all .ais-RefinementList-item{ display:flex; }
+
+    .facet-actions{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .btn-link{
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor:pointer;
+    }
+    .btn-link:hover{ background: #f3f4f6; }
+
+    /* Results header */
+    .results-top{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(to bottom, var(--surface), var(--surface-2));
+    }
+    .results-meta{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .ais-Stats-text{ color: var(--muted) !important; }
+    .ais-SortBy-select{
+      border: 1px solid var(--border) !important;
+      border-radius: 999px !important;
+      padding: 10px 12px !important;
+      background: #fff !important;
+      font-size: 14px !important;
+      outline: none !important;
+    }
+
+    /* Product hits grid */
+    .hits-wrap{ padding: 16px; }
+    .ais-Hits-list{
+      display:grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px !important;
+      margin:0 !important;
+      padding:0 !important;
+    }
+    @media (max-width: 1100px){
+      .ais-Hits-list{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px){
+      .ais-Hits-list{ grid-template-columns: 1fr; }
+    }
+    .ais-Hits-item{
+      padding: 0 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 18px !important;
+      overflow:hidden;
+      background: #fff !important;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08) !important;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .ais-Hits-item:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(17, 24, 39, 0.12) !important;
+    }
+
+    /* Hit card */
+    .hit{
+      display:flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .hit-media{
+      background: #f3f4f6;
+      aspect-ratio: 1 / 1;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .hit-media img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+    }
+    .hit-body{
+      padding: 12px 12px 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .hit-title{
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.25;
+      margin:0;
+    }
+    .hit-row{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .hit-price{
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .pill{
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text);
+      width: fit-content;
+    }
+    .hit-desc{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .hit-link{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .hit-link:hover{ text-decoration: underline; }
+
+    /* Blog section */
+    .blog-section{
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+    .blog-header{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .blog-label{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .blog-row{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 900px){
+      .blog-row{ grid-template-columns: 1fr; }
+    }
+    .blog-card{
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, 0.06);
+      overflow:hidden;
+      display:flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+    .blog-media{
+      background: #f3f4f6;
+      aspect-ratio: 16 / 9;
+      overflow:hidden;
+    }
+    .blog-media img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+    }
+    .blog-card .blog-body{
+      padding: 12px 12px 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+    }
+    .blog-title{
+      margin:0;
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    .blog-snippet{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+
+    /* Pagination */
+    .ais-Pagination{
+      margin-top: 16px !important;
+      display:flex !important;
+      justify-content:center !important;
+    }
+    .ais-Pagination-link{
+      border-radius: 12px !important;
+    }
+
+    footer{
+      max-width: 1200px;
+      margin: 0 auto 30px;
+      padding: 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align:center;
+    }
+
+    .ais-Index-name{ display:none !important; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <img
+          src="https://s3.eu-west-2.amazonaws.com/standfirst-designweek-production/uploads/2014/07/Tracksmith_logo-with-hare1.gif"
+          alt="Tracksmith logo"
+        />
+      </div>
+
+      <div class="search-row">
+        <div class="search-box">
+          <div id="searchbox"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Facets -->
+    <aside class="panel">
+      <div class="panel-header">
+        <h3>Filters</h3>
+        <div id="clear-refinements"></div>
+      </div>
+
+      <div class="panel-body">
+        <div class="facet-accordion" style="margin-bottom:14px;">
+          <div style="padding: 12px 14px; border-bottom: 1px solid var(--border); background: linear-gradient(to bottom, var(--surface), var(--surface-2)); font-weight:600;">
+            PRICE
+          </div>
+          <div class="facet-content">
+            <div class="range-row">
+              <span>Adjust price range</span>
+              <span style="font-weight:700;color:var(--text);">USD</span>
+            </div>
+            <div id="price"></div>
+          </div>
+        </div>
+
+        <details class="facet-accordion" open>
+          <summary>
+            <span>COLOR</span>
+            <span class="chev">›</span>
+          </summary>
+          <div class="facet-content">
+            <div id="imageColor" class="facet-top3"></div>
+            <div class="facet-actions">
+              <button class="btn-link" type="button" data-toggle="imageColor">Show all</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="facet-accordion" open>
+          <summary>
+            <span>SIZES</span>
+            <span class="chev">›</span>
+          </summary>
+          <div class="facet-content">
+            <div id="sizes" class="facet-top3"></div>
+            <div class="facet-actions">
+              <button class="btn-link" type="button" data-toggle="sizes">Show all</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </aside>
+
+    <!-- Results -->
+    <section class="panel">
+      <div class="results-top">
+        <div class="results-meta">
+          <div id="stats"></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <div id="sortby"></div>
+        </div>
+      </div>
+
+      <div class="hits-wrap">
+        <!-- Products -->
+        <div id="hits"></div>
+        <div id="pagination"></div>
+
+        <!-- Blogs -->
+        <div class="blog-section" id="blogSection" style="display:none;">
+          <div class="blog-header">
+            <div class="blog-label">From the Blog</div>
+            <div id="blogStats" style="color:var(--muted);font-size:13px;"></div>
+          </div>
+
+          <div id="blogTop3"></div>
+          <div id="blogPagination"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Powered by Algolia InstantSearch
+  </footer>
+
+  <script>
+    const ALGOLIA_APP_ID = "D3TZGQ36KA";
+    const ALGOLIA_SEARCH_KEY = "0fe77274595d707c767c1873edc9bf87";
+
+    const PRODUCTS_INDEX = "tracksmith_products";
+    const BLOGS_INDEX = "tracksmith_blogs";
+
+    const searchClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY);
+
+    const search = instantsearch({
+      indexName: PRODUCTS_INDEX,
+      searchClient,
+      routing: false
+    });
+
+    // Helper: safe field getter
+    function getField(hit, keys, fallback = "") {
+      for (const k of keys) {
+        if (hit && hit[k] != null && hit[k] !== "") return hit[k];
+      }
+      return fallback;
+    }
+
+    // ----- Products widgets -----
+    search.addWidgets([
+      instantsearch.widgets.searchBox({
+        container: "#searchbox",
+        placeholder: "Search products…",
+        showReset: true,
+        showSubmit: true,
+        showLoadingIndicator: false
+      }),
+
+      instantsearch.widgets.clearRefinements({
+        container: "#clear-refinements",
+        templates: { resetLabel: "Clear" },
+        cssClasses: { button: "btn-link" }
+      }),
+
+      // Limit products to 9 per page so blog results appear sooner
+      instantsearch.widgets.configure({
+        hitsPerPage: 9
+      }),
+
+      instantsearch.widgets.stats({
+        container: "#stats",
+        templates: {
+          text({ nbHits, processingTimeMS, query }) {
+            const q = query ? ` for “${query}”` : "";
+            return `<span><strong>${nbHits.toLocaleString()}</strong> products${q} <span style="opacity:.7">(${processingTimeMS}ms)</span></span>`;
+          }
+        }
+      }),
+
+      
+
+      instantsearch.widgets.rangeSlider({
+        container: "#price",
+        attribute: "price"
+      }),
+
+      instantsearch.widgets.refinementList({
+        container: "#imageColor",
+        attribute: "imageColor",
+        searchable: true,
+        searchablePlaceholder: "Search colors…",
+        showMore: false,
+        sortBy: ["count:desc", "name:asc"]
+      }),
+
+      instantsearch.widgets.refinementList({
+        container: "#sizes",
+        attribute: "sizes",
+        searchable: false,
+        showMore: false,
+
+        transformItems(items) {
+          const priorityOrder = ["S", "M", "L"];
+
+          // Only prioritize S/M/L if at least one exists in the current results
+          const hasAnyPriority = items.some(item =>
+            priorityOrder.includes(item.label)
+          );
+
+          // If no S/M/L are present (e.g., shoes sized 9, 10.5, etc),
+          // return items as-is so the first 3 real sizes are shown
+          if (!hasAnyPriority) {
+            return items;
+          }
+
+          // Otherwise, move S/M/L to the top in that exact order
+          const remaining = [...items];
+          const prioritized = [];
+
+          priorityOrder.forEach(label => {
+            const index = remaining.findIndex(item => item.label === label);
+            if (index !== -1) {
+              prioritized.push(remaining.splice(index, 1)[0]);
+            }
+          });
+
+          return [...prioritized, ...remaining];
+        }
+      }),
+
+      instantsearch.widgets.hits({
+        container: "#hits",
+        templates: {
+          item(hit, { html, components }) {
+            const title = hit.title || hit.productName || "Untitled";
+            const price = (typeof hit.price === "number") ? `$${hit.price}` : (hit.price ?? "");
+            const imageColor = hit.imageColor || "";
+            const desc = hit.description || hit.productDescription || "";
+            const img = hit.primaryImageUrl || hit.image || (hit.imageUrls && hit.imageUrls[0]) || "";
+            const url = hit.url || "#";
+
+            return html`
+              <article class="hit">
+                <div class="hit-media">
+                  ${img
+                    ? html`<img src="${img}" alt="${title}" loading="lazy" />`
+                    : html`<div style="color:#9ca3af;font-weight:600;">No image</div>`
+                  }
+                </div>
+
+                <div class="hit-body">
+                  <h4 class="hit-title">${components.Highlight({ attribute: "title", hit }) || title}</h4>
+
+                  <div class="hit-row">
+                    <span class="hit-price">${price}</span>
+                    ${imageColor ? html`<span class="pill">${imageColor}</span>` : html``}
+                  </div>
+
+                  ${desc ? html`<p class="hit-desc">${desc}</p>` : html``}
+
+                  <div class="hit-actions">
+                    <a class="hit-link" href="${url}" target="_blank" rel="noopener noreferrer">View product →</a>
+                  </div>
+                </div>
+              </article>
+            `;
+          }
+        }
+      }),
+
+      instantsearch.widgets.pagination({
+        container: "#pagination",
+        padding: 2,
+        showFirst: false,
+        showLast: false
+      })
+    ]);
+
+    // ----- Blogs (multi-index) -----
+    const blogIndex = instantsearch.widgets.index({ indexName: BLOGS_INDEX });
+
+    blogIndex.addWidgets([
+      // 3 blog results per page, single row
+      instantsearch.widgets.configure({
+        hitsPerPage: 3
+      }),
+
+      // Show/hide section + small stats
+      instantsearch.widgets.stats({
+        container: "#blogStats",
+        templates: {
+          text({ nbHits, query }) {
+            const section = document.getElementById("blogSection");
+            const shouldShow = (query && query.trim().length > 0) && nbHits > 0;
+            section.style.display = shouldShow ? "block" : "none";
+            return nbHits > 0 ? `${nbHits.toLocaleString()} posts` : "";
+          }
+        }
+      }),
+
+      instantsearch.widgets.hits({
+        container: "#blogTop3",
+        templates: {
+          empty(results, { html }) { return html``; },
+          item(hit, { html, components }) {
+            // Pull OG image specifically
+            let img = hit.og_image || "";
+
+            // If og_image is an array/object, normalize it
+            if (Array.isArray(img)) img = img[0] || "";
+            if (img && typeof img === "object") img = img.url || img.src || img.href || "";
+
+            const title = getField(hit, ["title", "name", "headline"], "Blog post");
+            const url = getField(hit, ["url", "link", "permalink"], "#");
+            const snippet = getField(hit, ["description", "excerpt", "summary", "content"], "");
+
+            return html`
+              <article class="blog-card">
+                ${img ? html`
+                  <div class="blog-media">
+                    <img src="${img}" alt="${title}" loading="lazy" />
+                  </div>
+                ` : html``}
+
+                <div class="blog-body">
+                  <h4 class="blog-title">${components.Highlight({ attribute: "title", hit }) || title}</h4>
+                  ${snippet ? html`<p class="blog-snippet">${snippet}</p>` : html``}
+                  <div style="margin-top:auto;">
+                    <a class="hit-link" href="${url}" target="_blank" rel="noopener noreferrer">Read →</a>
+                  </div>
+                </div>
+              </article>
+            `;
+          }
+        },
+        cssClasses: { list: "blog-row" }
+      }),
+
+      // Blog pagination (numbered)
+      instantsearch.widgets.pagination({
+        container: "#blogPagination",
+        padding: 2,
+        showFirst: false,
+        showLast: false
+      })
+    ]);
+
+    search.addWidgets([blogIndex]);
+
+    search.start();
+
+    // ----- "Top 3 then expand" behavior for COLOR and SIZES -----
+    function setupTop3Toggle(facetId){
+      const container = document.getElementById(facetId);
+      const btn = document.querySelector(`[data-toggle="${facetId}"]`);
+      if(!container || !btn) return;
+
+      btn.addEventListener("click", () => {
+        container.classList.toggle("show-all");
+        const expanded = container.classList.contains("show-all");
+        btn.textContent = expanded ? "Show top 3" : "Show all";
+      });
+    }
+    setupTop3Toggle("imageColor");
+    setupTop3Toggle("sizes");
+  </script>
+</body>
+</html>
