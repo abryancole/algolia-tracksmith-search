@@ -122,6 +122,7 @@ This project reflects how I would approach a real Algolia implementation: starti
 
 ## How to Run
 
+- View the live project: https://abryancole.github.io/algolia-tracksmith-search/index.html
 - Open the project locally in a browser (or via a simple local server if required)
 
 > **Note:** This project uses Algolia search-only keys suitable for frontend usage.
