@@ -1,5 +1,9 @@
 # Algolia Search Implementation – Tracksmith Mock E-Commerce Project
 
+## Live Demo
+**View the live project:** 
+https://abryancole.github.io/algolia-tracksmith-search/index.html
+
 ## Project Overview
 
 This project demonstrates a production-adjacent Algolia-powered search experience, designed to showcase my approach to relevance configuration, search UX, data modeling, and iteration within realistic constraints.
